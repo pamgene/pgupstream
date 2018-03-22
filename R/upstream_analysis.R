@@ -5,18 +5,16 @@
 #' @import reshape2
 #' @import foreach
 #' @import doParallel
-#' @import scales
+#' @import pgscales
 #' @import data.table
 
 #' @export
-scanAnalysis2g = function(df     ,dbFrame,
+pgScanAnalysis2g = function(df     ,dbFrame,
                                 dbWeights = c(iviv = 1,PhosphoNET = 1),
                                 scanRank = 4:12,
-                                nPermutations = 500,
-                                minPScore = 300){
+                                nPermutations = 500){
   #run two group.
   #add dbWeight
-  dbFrame= subset(dbFrame, Database != "phosphoNET" | Kinase_PKinase_PredictorVersion2Score > minPScore)
   dbFrame = dbFrame %>% group_by(Database) %>% do({
     data.frame(., dbWeight = dbWeights[[ .$Database[1] ]])
   })
@@ -55,15 +53,13 @@ scanAnalysis2g = function(df     ,dbFrame,
 }
 
 #'@export
-scanAnalysis0 = function(df     ,dbFrame,
+pgScanAnalysis0 = function(df     ,dbFrame,
                           dbWeights = c(HPRD = 1,PhosphoNET = 1,Phosphosite = 1,Reactome = 1),
                           scanRank = 4:12,
-                          nPermutations = 500,
-                          minPScore = 300){
+                          nPermutations = 500){
 
   # run a sinlge column, without grouping
   #add dbWeight
-  dbFrame= subset(dbFrame, Database != "phosphoNET" |  Kinase_PKinase_PredictorVersion2Score > minPScore)
   dbFrame = dbFrame %>% group_by(Database) %>% do({
     data.frame(., dbWeight = dbWeights[[ .$Database[1] ]])
   })

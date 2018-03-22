@@ -1,17 +1,3 @@
-rescale = function (x, to = c(0, 1), from = range(x, na.rm = TRUE, finite = TRUE), clip = FALSE)
-{
-  if (zero_range(from) || zero_range(to)) {
-    return(ifelse(is.na(x), NA, mean(to)))
-  }
-  x = (x - from[1])/diff(from) * diff(to) + to[1]
-
-  if(clip){
-    # elegant clipping by Josh O'Brien @ Stackoverflow
-    #http://stackoverflow.com/questions/13868963/clip-values-between-a-minimum-and-maximum-allowed-value-in-r
-    x = to[1] + (x > to[1])*(x-to[1])  - (x > to[2]) * (x - to[2])
-  }
-  return(x)
-}
 #' @export
 scorePlot = function(aResult, plotorder = "score"){
   aFull = ldply(aResult, .fun = function(.)return(data.frame(.$aResult, mxRank = .$mxRank) ))
@@ -33,7 +19,8 @@ makeScorePlot = function (aFrame, plotorder = "score"){
   }
 
   prt2 = ggplot(aFrame, aes(x= reorder(ClassName, orderx, median), y = NormalizedSetStat)) + geom_boxplot()
-  prt2 = prt2 + geom_point(aes(colour = rescale(pFeatureScore, from = c(0,2), clip = TRUE), size = nFeatures))
+  prt2 = prt2 + geom_point(aes(colour = rescale(pFeatureScore, from = c(0,2), clip = TRUE),
+                               size   = rescale(nFeatures, from = c(1,30), to = c(1,30), clip = TRUE)))
   prt2 = prt2 + geom_abline(slope = 0)
   prt2 = prt2 + coord_flip() + theme_bw()
   prt2 = prt2 + scale_colour_gradientn(name = "Specificity Score",space = "rgb",
@@ -42,10 +29,11 @@ makeScorePlot = function (aFrame, plotorder = "score"){
                                        breaks = c(0,1.3, 2)/2,
                                        labels = c(0, 1.3, 2),
                                        limits = c(0,1))
+  prt2 = prt2 + scale_size(breaks = c(10,20,31), labels = c("10", "20", ">30"))
   prt2 = prt2 + ylab("Normalized kinase statistic") + xlab("Kinase name")
   yRange = layer_scales(prt2)$y$range$range
   prt2 = prt2 + scale_y_continuous(position = "top", limits = c( min(0, yRange[1]), max(0, yRange[2])) )
-  prt2 = prt2 + guides( size = guide_legend("Number of peptides included"), color = guide_colorbar("Specificity score"))
+  prt2 = prt2 + guides( size = guide_legend("Peptide set size"), color = guide_colorbar("Specificity score"))
   return(prt2)
 }
 
