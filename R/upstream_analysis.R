@@ -11,7 +11,7 @@
 #' @export
 pgScanAnalysis2g = function(df     ,dbFrame,
                                 dbWeights = c(iviv = 1,PhosphoNET = 1),
-                                scanRank = 4:12,
+                                scanRank,
                                 nPermutations = 500){
   #run two group.
   #add dbWeight
@@ -55,7 +55,7 @@ pgScanAnalysis2g = function(df     ,dbFrame,
 #'@export
 pgScanAnalysis0 = function(df     ,dbFrame,
                           dbWeights = c(HPRD = 1,PhosphoNET = 1,Phosphosite = 1,Reactome = 1),
-                          scanRank = 4:12,
+                          scanRank,
                           nPermutations = 500){
 
   # run a sinlge column, without grouping

@@ -72,9 +72,13 @@ ubMelt = function(aList){
 }
 
 #' @export
-makePerPeptidePlot = function(df, dbFrame, scanRank, minPScore){
-  dbFrame= subset(dbFrame, Database != "phosphoNET" |  Kinase_PKinase_PredictorVersion2Score > minPScore)
-  dbFrame = subset(dbFrame, Kinase_Rank <= scanRank)
+makePerPeptidePlot = function(df, dbFrame, scanRank = NULL, minPScore = NULL){
+  if(!is.null(minPScore)){
+    dbFrame= subset(dbFrame, Database != "phosphoNET" |  Kinase_PKinase_PredictorVersion2Score > minPScore)
+  }
+  if(!is.null(scanRank)){
+    dbFrame = subset(dbFrame, Kinase_Rank <= scanRank)
+  }
   ixList = intersectById(dbFrame, df)
   dbFrame = ixList[[1]]
   df = ixList[[2]]
@@ -115,9 +119,13 @@ makePerPeptidePlot = function(df, dbFrame, scanRank, minPScore){
 }
 
 #' @export
-makeDetailsTable = function(df, dbFrame, scanRank, minPScore){
-  dbFrame= subset(dbFrame, Database != "phosphoNET" |  Kinase_PKinase_PredictorVersion2Score > minPScore)
-  dbFrame = subset(dbFrame, Kinase_Rank <= scanRank)
+makeDetailsTable = function(df, dbFrame, scanRank = NULL, minPScore = NULL){
+  if (!is.null(minPScore)){
+    dbFrame= subset(dbFrame, Database != "phosphoNET" |  Kinase_PKinase_PredictorVersion2Score > minPScore)
+  }
+  if (!is.null(scanRank)){
+    dbFrame = subset(dbFrame, Kinase_Rank <= scanRank)
+  }
   ixList = intersectById(dbFrame, df)
   dbFrame = ixList[[1]]
   outFrame = dbFrame %>% group_by(ID, PepProtein_PhosLink, PepProtein_UniprotName) %>%
