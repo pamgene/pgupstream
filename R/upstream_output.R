@@ -7,18 +7,19 @@ scorePlot = function(aResult, plotorder = "score"){
 #' @export
 makeScorePlot = function (aFrame, plotorder = "score"){
 
-  aFrame = aFrame %>% group_by(ClassName) %>% mutate(meanScore = mean(combinedScore, na.rm = TRUE), meanStat = mean(NormalizedSetStat, na.rm = TRUE))
-  aFrame = aFrame %>% group_by(mxRank) %>% mutate(ClassRank = rank(-combinedScore))
+  #aFrame = aFrame %>% group_by(ClassName) %>% mutate(meanScore = mean(combinedScore, na.rm = TRUE), meanStat = mean(NormalizedSetStat, na.rm = TRUE))
+  #aFrame = aFrame %>% group_by(mxRank) %>% mutate(ClassRank = rank(-combinedScore))
 
-  if (plotorder == "score"){
-    orderx = aFrame$combinedScore
-  }
+  if (plotorder == "Median Score"){
+    aFrame = aFrame %>% mutate(rankedClassName = reorder(ClassName, combinedScore, median))
+  } else if(plotorder == "Max Score"){
+      aFrame = aFrame %>% mutate(rankedClassName = reorder(ClassName, combinedScore, max))
+  } else if (plotorder == "Statistic"){
+      #orderx = -aFrame$NormalizedSetStat
+      aFrame = aFrame %>% mutate(rankedClassName = reorder(ClassName, -NormalizedSetStat, median))
+  } else stop("Unknown Ranking Method")
 
-  if (plotorder == "stat"){
-    orderx = -aFrame$NormalizedSetStat
-  }
-
-  prt2 = ggplot(aFrame, aes(x= reorder(ClassName, orderx, median), y = NormalizedSetStat)) + geom_boxplot()
+  prt2 = ggplot(aFrame, aes(x= rankedClassName, y = NormalizedSetStat)) + geom_boxplot()
   prt2 = prt2 + geom_point(aes(colour = rescale(pFeatureScore, from = c(0,2), clip = TRUE),
                                size   = rescale(nFeatures, from = c(1,30), to = c(1,30), clip = TRUE)))
   prt2 = prt2 + geom_abline(slope = 0)
@@ -49,7 +50,7 @@ makeVolcanoPlot = function(aSummary){
                             )
               )
 
-  vp = vp + geom_text() + scale_colour_gradientn(name = "Specificity Score",space = "rgb",
+  vp = vp + geom_text() + scale_colour_gradientn(name = "Mean Specificity Score",space = "rgb",
                                    colours = c("black", "white", "red"),
                                    values = c(0,1.3, 2)/2,
                                    breaks = c(0,1.3, 2)/2,
@@ -71,6 +72,11 @@ ubMelt = function(aList){
   return(aMelt)
 }
 
+lowestRank = function(dbf){
+  lrf = dbf %>% summarize(lowestRank = min(Kinase_Rank))
+  return(lrf$lowestRank)
+}
+
 #' @export
 makePerPeptidePlot = function(df, dbFrame, scanRank = NULL, minPScore = NULL){
   if(!is.null(minPScore)){
@@ -82,17 +88,14 @@ makePerPeptidePlot = function(df, dbFrame, scanRank = NULL, minPScore = NULL){
   ixList = intersectById(dbFrame, df)
   dbFrame = ixList[[1]]
   df = ixList[[2]]
-  dbFrame = dbFrame %>% group_by(ID) %>% dplyr::summarise(lowestRank = min(Kinase_Rank))
+  #dbFrame = dbFrame %>% group_by(ID) %>% dplyr::summarise(lowestRank = min(Kinase_Rank))
   if (!is.null(df[["grp"]])){
-      perPepStats = df %>% group_by(ID) %>% do({
-      thisPep = subset(dbFrame, ID == .$ID[1])
-      aTest = t.test(value ~ grp, data = ., var.equal = TRUE)
-      aResult = data.frame(pes = diff(aTest$estimate),
-                           ciu = -aTest$conf.int[1],
-                           cil = -aTest$conf.int[2],
-                           lowRank = thisPep$lowestRank
-      )
-    })
+    perPepStats = peptideAnalysis(df)
+    perPepStats = perPepStats %>% group_by(ID) %>% mutate(lowestRank = )
+
+
+
+    }
     ppp = ggplot(perPepStats, aes(x = reorder(ID, -lowRank), colour = as.factor(lowRank), y = pes, ymin = cil, ymax = ciu)) + geom_point() + geom_errorbar()
     ppp = ppp + coord_flip()
     ppp = ppp + xlab("Peptide ID") + ylab("Group difference")
@@ -137,15 +140,17 @@ makeDetailsTable = function(df, dbFrame, scanRank = NULL, minPScore = NULL){
 #' @export
 makeSummary = function(df){
   aSum = df %>% group_by(ClassName) %>% dplyr::summarise(meanFeatScore = mean(pFeatureScore, na.rm = TRUE),
+                                                           maxFeatScore = max(pFeatureScore, na.rm = TRUE),
                                                            meanPhenoScore = mean(pPhenoScore, na.rm = TRUE),
+                                                           maxPhenoScore = max(pPhenoScore, na.rm = TRUE),
                                                            meanScore = mean(combinedScore, na.rm = TRUE),
                                                            medianScore = median(combinedScore, na.rm = TRUE),
+                                                           maxScore = max(combinedScore, na.rm = TRUE),
                                                            meanStat = mean(NormalizedSetStat, na.rm = TRUE),
                                                            medianStat = median(NormalizedSetStat, na.rm = TRUE),
                                                            sdStat   = sd(NormalizedSetStat, na.rm = TRUE),
-                                                           meanSetSize =mean(nFeatures, na.rm = TRUE))
-  aSum = aSum%>% arrange(-medianScore)
-  return(aSum)
+                                                           meanSetSize =round(mean(nFeatures, na.rm = TRUE)))
+    aSum = aSum%>% arrange(-medianScore)
 }
 
 #' @export

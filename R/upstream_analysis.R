@@ -101,6 +101,9 @@ intersectById = function(df1, df2){
   df1$ID = droplevels(df1$ID)
   df2$ID = droplevels(df2$ID)
   isct = intersect(df1$ID, df2$ID)
+  if (length(isct) == 0){
+    stop("No matching peptide IDs!")
+  }
   df1 = subset(df1, ID %in% isct)
   df2 = subset(df2, ID %in% isct)
   df1$ID = droplevels(df1$ID)
@@ -108,4 +111,21 @@ intersectById = function(df1, df2){
   return(list(df1, df2))
 }
 
+#'@export
+peptideAnalysis = function(df, type = "unpaired"){
+  if( type == "unpaired"){
+    result = unpaired(df)
+  } else {
+    stop(paste("unknown type for peptide analysis:", type))
+  }
+}
 
+unpaired = function(df){
+  df = df %>% group_by(ID) %>% do({
+    aTest = t.test(value ~ grp, data = ., var.equal = TRUE)
+    result = data.frame(pes = diff(aTest$estimate),
+                        ciu = -aTest$conf.int[1],
+                        cil = -aTest$conf.int[2],
+                        pval = aTest$p.value)
+  })
+}
