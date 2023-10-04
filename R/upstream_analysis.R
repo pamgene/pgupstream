@@ -96,6 +96,84 @@ pgScanAnalysis0 = function(df     ,dbFrame,
   return(aScanResult)
 }
 
+#'@export
+pgScanAnalysis2g_np = function(df     ,dbFrame,
+                            dbWeights = c(iviv = 1,PhosphoNET = 1),
+                            scanRank,
+                            nPermutations = 500){
+  #run two group, non parallel
+  #add dbWeight
+  dbFrame = dbFrame %>%
+    group_by(Database) %>%
+    do({
+    data.frame(., dbWeight = dbWeights[[ .$Database[1] ]])
+  })
+
+  ixList = intersectById(dbFrame, df)
+  dbFrame = ixList[[1]]
+  df = ixList[[2]]
+  X = acast(df, colSeq~ID, fun.aggregate = mean, value.var = "value")
+  grp = acast(df, colSeq~ID, value.var = "grp")[,1]
+  grp = as.factor(grp)
+
+  result =  lapply(scanRank, FUN = function(i)
+    {
+      aTop = dbFrame %>%
+        filter(Kinase_Rank <= i)
+
+      M = acast(aTop, ID ~ Kinase_Name, value.var = "dbWeight", fun.aggregate = max)
+      M[!is.finite(M)] = 0
+      inx2 = intersect(colnames(X), rownames(M))
+      Xi = X[, colnames(X) %in% inx2]
+      M = M[rownames(M) %in% inx2,]
+      # cannot depend on dcast for correct order
+      M = M[order(rownames(M)),]
+      Xi = Xi[, order(colnames(Xi))]
+      if(!all(rownames(M)== colnames(Xi))) stop("Mismatch between data matrix and upstream kinase matrix")
+      aResult = fcs(Xi, M, grp, nPerms = nPermutations)
+      aResult = aResult[order(aResult$combinedScore, decreasing = TRUE),]
+      return(data.table(mxRank = i, aResult = list(aResult), X = list(Xi), M = list(M)))
+    })
+  result
+}
+
+#'@export
+pgScanAnalysis0_np = function(df     ,dbFrame,
+                           dbWeights = c(HPRD = 1,PhosphoNET = 1,Phosphosite = 1,Reactome = 1),
+                           scanRank,
+                           nPermutations = 500){
+
+  # run a sinlge column, without grouping, non parallel
+  #add dbWeight
+  dbFrame = dbFrame %>% group_by(Database) %>% do({
+    data.frame(., dbWeight = dbWeights[[ .$Database[1] ]])
+  })
+
+  ixList = intersectById(dbFrame, df)
+  dbFrame = ixList[[1]]
+  df = ixList[[2]]
+
+  result = lapply(scanRank, FUN = function(i)
+    #aScanResult = for(i in scanRank)#debug
+    {
+      aTop = subset(dbFrame, Kinase_Rank <= i)
+      M = acast(aTop, ID ~ Kinase_Name, value.var = "dbWeight", fun.aggregate = max)
+      M[!is.finite(M)] = 0
+      inx2 = intersect(df$ID, rownames(M))
+      dfx =  df%>%filter(ID %in% inx2)
+      X = matrix(ncol = dim(dfx)[1], nrow = 1, data = dfx$value)
+      colnames(X) = dfx$ID
+      M = M[rownames(M) %in% inx2,]
+      M = M[order(rownames(M)),]
+      X = X[, order(colnames(X))]
+      if(!all(rownames(M)== colnames(X))) stop("Mismatch between data matrix and upstream kinase matrix")
+      aResult = fcs(X, M, statFun = stat.identity, phenoGrp = NULL, phenoPerms = FALSE, nPerms = nPermutations)
+      aResult = aResult[order(aResult$combinedScore, decreasing = TRUE),]
+      return(data.table(mxRank = i, aResult = list(aResult), X = list(X), M = list(M)))
+    })
+  result
+}
+
 
 intersectById = function(df1, df2){
   df1$ID = droplevels(df1$ID)
