@@ -7,6 +7,7 @@ scorePlot = function(aResult, plotorder = "score"){
   sp = makeScorePlot(aFull, plotorder)
 }
 
+#' @export
 makeScorePlot = function (aFrame, plotorder = "score") {
   if (plotorder == "Median Score") {
     aFrame = aFrame %>% mutate(rankedClassName = reorder(ClassName, combinedScore, median))
@@ -15,7 +16,7 @@ makeScorePlot = function (aFrame, plotorder = "score") {
   } else if (plotorder == "Statistic") {
     aFrame = aFrame %>% mutate(rankedClassName = reorder(ClassName, -NormalizedSetStat, median))
   } else stop("Unknown Ranking Method")
-  
+
   prt2 = ggplot(aFrame, aes(x= rankedClassName, y = NormalizedSetStat)) + geom_boxplot()
   prt2 = prt2 + geom_point(aes(colour = rescale(pFeatureScore, from = c(0,2), clip = TRUE),
                                size   = rescale(nFeatures, from = c(1,30), to = c(1,30), clip = TRUE)))
@@ -45,14 +46,14 @@ makeVolcanoPlot = function(aSummary) {
     alpha =  1-rescale(sdStat, from = c(0,1), clip = TRUE )
   )
   )
-  
+
   vp = vp + geom_text() + scale_colour_gradientn(name = "Mean Specificity Score",space = "rgb",
                                                  colours = c("black", "white", "red"),
                                                  values = c(0,1.3, 2)/2,
                                                  breaks = c(0,1.3, 2)/2,
                                                  labels = c(0, 1.3, 2),
                                                  limits = c(0,1))
-  
+
   vp = vp + scale_alpha("Consistency", limits = c(0,1))
   vp = vp + scale_size("Number of peptides")
   vp = vp + theme_bw() + theme(panel.background = element_rect(fill = 'lightyellow', colour = 'black'))
@@ -74,7 +75,7 @@ makePerPeptidePlot = function(df, dbFrame, scanRank = NULL, minPScore = NULL) {
   ixList  <- intersectById(dbFrame, df)
   dbFrame <- ixList[[1]]
   df      <- ixList[[2]]
-  
+
   if (!is.null(df[["grp"]])) {
     perPepStats = peptideAnalysis(df)
     perPepStats = perPepStats %>% group_by(ID) %>% do({
@@ -91,7 +92,7 @@ makePerPeptidePlot = function(df, dbFrame, scanRank = NULL, minPScore = NULL) {
     ppp = ppp + xlab("Peptide ID") + ylab("Group difference")
     ppp = ppp + geom_abline(slope = 0)
     ppp = ppp + guides( color = guide_legend("Lowest Kinase Rank"))
-    
+
   } else {
     perPepStats = df %>% group_by(ID) %>% do({
       thisPep = subset(dbFrame, ID == .$ID[1])
@@ -106,7 +107,7 @@ makePerPeptidePlot = function(df, dbFrame, scanRank = NULL, minPScore = NULL) {
     ppp = ppp + guides( color = guide_legend("Lowest Kinase Rank"))
   }
   yRange = layer_scales(ppp)$y$range$range
-  
+
   ppp + scale_y_continuous(position = "top", limits = c(-max(abs(yRange)), max(abs(yRange))))
 }
 
@@ -121,10 +122,11 @@ makeDetailsTable = function(df, dbFrame, scanRank = NULL, minPScore = NULL) {
   dbFrame = ixList[[1]]
   outFrame = dbFrame %>% group_by(ID, PepProtein_PhosLink, PepProtein_UniprotName) %>%
     dplyr::summarise(Database = paste(Database, collapse = " / "), Kinase_Rank = min(Kinase_Rank) )
-  
+
   outFrame %>% arrange(Kinase_Rank, -as.integer(ID))
 }
 
+#` @export`
 makeSummary = function(df) {
   aSum = df %>% group_by(ClassName) %>% dplyr::summarise(meanFeatScore = mean(pFeatureScore, na.rm = TRUE),
                                                          maxFeatScore = max(pFeatureScore, na.rm = TRUE),
@@ -145,7 +147,7 @@ getSettingsInfo = function(settings) {
 }
 
 create_datatable <- function(data) {
-  datatable(data, extensions = 'Buttons', options = list(dom = 'Blfrtip', 
+  datatable(data, extensions = 'Buttons', options = list(dom = 'Blfrtip',
                                                          buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
                                                          paging = TRUE,
                                                          pageLength = 100))
