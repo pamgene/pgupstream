@@ -126,7 +126,7 @@ makeDetailsTable = function(df, dbFrame, scanRank = NULL, minPScore = NULL) {
   outFrame %>% arrange(Kinase_Rank, -as.integer(ID))
 }
 
-#` @export`
+#' @export
 makeSummary = function(df) {
   aSum = df %>% group_by(ClassName) %>% dplyr::summarise(meanFeatScore = mean(pFeatureScore, na.rm = TRUE),
                                                          maxFeatScore = max(pFeatureScore, na.rm = TRUE),
