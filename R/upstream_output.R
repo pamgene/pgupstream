@@ -128,7 +128,9 @@ makeDetailsTable = function(df, dbFrame, scanRank = NULL, minPScore = NULL) {
 
 #' @export
 makeSummary = function(df) {
-  aSum = df %>% group_by(ClassName) %>% dplyr::summarise(meanFeatScore = mean(pFeatureScore, na.rm = TRUE),
+  aSum = df %>%
+    group_by(ClassName) %>%
+    dplyr::summarise(meanFeatScore = mean(pFeatureScore, na.rm = TRUE),
                                                          maxFeatScore = max(pFeatureScore, na.rm = TRUE),
                                                          meanPhenoScore = mean(pPhenoScore, na.rm = TRUE),
                                                          maxPhenoScore = max(pPhenoScore, na.rm = TRUE),
@@ -138,8 +140,11 @@ makeSummary = function(df) {
                                                          meanStat = mean(NormalizedSetStat, na.rm = TRUE),
                                                          medianStat = median(NormalizedSetStat, na.rm = TRUE),
                                                          sdStat   = sd(NormalizedSetStat, na.rm = TRUE),
+                                                         meanDelta = mean(delta, na.rm = TRUE),
+                                                         medianDelta = median(delta, na.rm = TRUE),
                                                          meanSetSize =round(mean(nFeatures, na.rm = TRUE)))
-  aSum %>% arrange(-medianScore)
+  aSum %>%
+    arrange(-medianScore)
 }
 
 getSettingsInfo = function(settings) {
