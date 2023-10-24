@@ -1,3 +1,16 @@
+#' perform a UKA analysis while scanning the PNET rank of upstream kinases
+#' Intended for use with BN upstream apps
+#' pgScanAnalysis2g(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, implements parallel processing
+#' pgScanAnalysis0(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, implements parallel processing
+#' pgScanAnalysis2g_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, no parallel processing
+#' pgScanAnalysis0_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, no parallel processing
+#'
+#' @param df long format data frame with columns ID, colSeq, value, grp
+#' @param dbFrame data frame with the UK database
+#' @param dbWeights named vector of weights for each database, must match the names in dbFrame
+#' @param scanRank vector of ranks to scan
+#' @param nPermutations number of permutations to use
+#' @return a list of data frames, one for each scanRank
 #' @import pgFCS
 #' @import dplyr
 #' @import plyr
@@ -7,17 +20,15 @@
 #' @import doParallel
 #' @import pgscales
 #' @import data.table
-
 #' @export
 pgScanAnalysis2g = function(df     ,dbFrame,
-                                dbWeights = c(iviv = 1,PhosphoNET = 1),
+                                dbWeights,
                                 scanRank,
                                 nPermutations = 500){
   #run two group.
   #add dbWeight
-  dbFrame = dbFrame %>% group_by(Database) %>% do({
-    data.frame(., dbWeight = dbWeights[[ .$Database[1] ]])
-  })
+  dbFrame = dbFrame %>%
+    addDbWeights(dbWeights)
 
   ixList = intersectById(dbFrame, df)
   dbFrame = ixList[[1]]
@@ -51,18 +62,29 @@ pgScanAnalysis2g = function(df     ,dbFrame,
   stopCluster(cl)
   return(aScanResult)
 }
-
-#'@export
+#' perform a UKA analysis while scanning the PNET rank of upstream kinases
+#' Intended for use with BN upstream apps
+#' pgScanAnalysis2g(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, implements parallel processing
+#' pgScanAnalysis0(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, implements parallel processing
+#' pgScanAnalysis2g_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, no parallel processing
+#' pgScanAnalysis0_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, no parallel processing
+#'
+#' @param df long format data frame with columns ID, colSeq, value, grp
+#' @param dbFrame data frame with the UK database
+#' @param dbWeights named vector of weights for each database, must match the names in dbFrame
+#' @param scanRank vector of ranks to scan
+#' @param nPermutations number of permutations to use
+#' @return a list of data frames, one for each scanRank
+#' @export
 pgScanAnalysis0 = function(df     ,dbFrame,
-                          dbWeights = c(HPRD = 1,PhosphoNET = 1,Phosphosite = 1,Reactome = 1),
+                          dbWeights,
                           scanRank,
                           nPermutations = 500){
 
   # run a sinlge column, without grouping
   #add dbWeight
-  dbFrame = dbFrame %>% group_by(Database) %>% do({
-    data.frame(., dbWeight = dbWeights[[ .$Database[1] ]])
-  })
+  dbFrame = dbFrame %>%
+    addDbWeights(dbWeights)
 
   ixList = intersectById(dbFrame, df)
   dbFrame = ixList[[1]]
@@ -75,7 +97,6 @@ pgScanAnalysis0 = function(df     ,dbFrame,
   aPackagesList = c("pgFCS", "reshape2" )
 
   aScanResult =  foreach(i = scanRank, .packages = aPackagesList) %dopar%
-  #aScanResult = for(i in scanRank)#debug
   {
     aTop = subset(dbFrame, Kinase_Rank <= i)
     M = acast(aTop, ID ~ Kinase_Name, value.var = "dbWeight", fun.aggregate = max)
@@ -96,18 +117,28 @@ pgScanAnalysis0 = function(df     ,dbFrame,
   return(aScanResult)
 }
 
-#'@export
+#' perform a UKA analysis while scanning the PNET rank of upstream kinases
+#' Intended for use with BN upstream apps
+#' pgScanAnalysis2g(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, implements parallel processing
+#' pgScanAnalysis0(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, implements parallel processing
+#' pgScanAnalysis2g_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, no parallel processing
+#' pgScanAnalysis0_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, no parallel processing
+#'
+#' @param df long format data frame with columns ID, colSeq, value, grp
+#' @param dbFrame data frame with the UK database
+#' @param dbWeights named vector of weights for each database, must match the names in dbFrame
+#' @param scanRank vector of ranks to scan
+#' @param nPermutations number of permutations to use
+#' @return a list of data frames, one for each scanRank
+#' @export
 pgScanAnalysis2g_np = function(df     ,dbFrame,
-                            dbWeights = c(iviv = 1,PhosphoNET = 1),
+                            dbWeights,
                             scanRank,
                             nPermutations = 500){
   #run two group, non parallel
   #add dbWeight
   dbFrame = dbFrame %>%
-    group_by(Database) %>%
-    do({
-    data.frame(., dbWeight = dbWeights[[ .$Database[1] ]])
-  })
+    addDbWeights(dbWeights)
 
   ixList = intersectById(dbFrame, df)
   dbFrame = ixList[[1]]
@@ -137,17 +168,29 @@ pgScanAnalysis2g_np = function(df     ,dbFrame,
   result
 }
 
-#'@export
+#' perform a UKA analysis while scanning the PNET rank of upstream kinases
+#' Intended for use with BN upstream apps
+#' pgScanAnalysis2g(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, implements parallel processing
+#' pgScanAnalysis0(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, implements parallel processing
+#' pgScanAnalysis2g_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, no parallel processing
+#' pgScanAnalysis0_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, no parallel processing
+#'
+#' @param df long format data frame with columns ID, colSeq, value, grp
+#' @param dbFrame data frame with the UK database
+#' @param dbWeights named vector of weights for each database, must match the names in dbFrame
+#' @param scanRank vector of ranks to scan
+#' @param nPermutations number of permutations to use
+#' @return a list of data frames, one for each scanRank
+#' @export
 pgScanAnalysis0_np = function(df     ,dbFrame,
-                           dbWeights = c(HPRD = 1,PhosphoNET = 1,Phosphosite = 1,Reactome = 1),
+                           dbWeights,
                            scanRank,
                            nPermutations = 500){
 
   # run a sinlge column, without grouping, non parallel
   #add dbWeight
-  dbFrame = dbFrame %>% group_by(Database) %>% do({
-    data.frame(., dbWeight = dbWeights[[ .$Database[1] ]])
-  })
+  dbFrame = dbFrame %>%
+    addDbWeights(dbWeights)
 
   ixList = intersectById(dbFrame, df)
   dbFrame = ixList[[1]]
@@ -189,21 +232,19 @@ intersectById = function(df1, df2){
   return(list(df1, df2))
 }
 
-#'@export
-peptideAnalysis = function(df, type = "unpaired"){
-  if( type == "unpaired"){
-    result = unpaired(df)
-  } else {
-    stop(paste("unknown type for peptide analysis:", type))
+addDbWeights = function(db, dbWeights){
+  dfWeights = dbweights %>%
+    as.data.frame() %>%
+    setNames("dbWeight") %>%
+    mutate(Database = names(dbWeights))
+
+  db = db %>%
+    left_join(dfWeights, by = "Database")
+
+  if (any(is.na(db$dbWeight))){
+    stop("Missing or incorrect database weights!")
   }
+  return(db)
 }
 
-unpaired = function(df){
-  df = df %>% group_by(ID) %>% do({
-    aTest = t.test(value ~ grp, data = ., var.equal = TRUE)
-    result = data.frame(pes = diff(aTest$estimate),
-                        ciu = -aTest$conf.int[1],
-                        cil = -aTest$conf.int[2],
-                        pval = aTest$p.value)
-  })
-}
+

@@ -123,7 +123,8 @@ makeDetailsTable = function(df, dbFrame, scanRank = NULL, minPScore = NULL) {
   outFrame = dbFrame %>% group_by(ID, PepProtein_PhosLink, PepProtein_UniprotName) %>%
     dplyr::summarise(Database = paste(Database, collapse = " / "), Kinase_Rank = min(Kinase_Rank) )
 
-  outFrame %>% arrange(Kinase_Rank, -as.integer(ID))
+  outFrame %>%
+    arrange(Kinase_Rank, -as.integer(ID))
 }
 
 #' @export
@@ -145,15 +146,4 @@ makeSummary = function(df) {
                                                          meanSetSize =round(mean(nFeatures, na.rm = TRUE)))
   aSum %>%
     arrange(-medianScore)
-}
-
-getSettingsInfo = function(settings) {
-  return(settings)
-}
-
-create_datatable <- function(data) {
-  datatable(data, extensions = 'Buttons', options = list(dom = 'Blfrtip',
-                                                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                                                         paging = TRUE,
-                                                         pageLength = 100))
 }
