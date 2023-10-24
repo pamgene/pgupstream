@@ -233,7 +233,7 @@ intersectById = function(df1, df2){
 }
 
 addDbWeights = function(db, dbWeights){
-  dfWeights = dbweights %>%
+  dfWeights = dbWeights %>%
     as.data.frame() %>%
     setNames("dbWeight") %>%
     mutate(Database = names(dbWeights))
