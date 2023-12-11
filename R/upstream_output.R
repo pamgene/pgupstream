@@ -8,7 +8,7 @@ scorePlot = function(aResult, plotorder = "score"){
 }
 
 #' @export
-makeScorePlot = function (aFrame, plotorder = "score") {
+makeScorePlot = function (aFrame, plotorder = "Median Score") {
   if (plotorder == "Median Score") {
     aFrame = aFrame %>% mutate(rankedClassName = reorder(ClassName, combinedScore, median))
   } else if(plotorder == "Max Score") {
@@ -22,7 +22,7 @@ makeScorePlot = function (aFrame, plotorder = "score") {
                                size   = rescale(nFeatures, from = c(1,30), to = c(1,30), clip = TRUE)))
   prt2 = prt2 + geom_abline(slope = 0)
   prt2 = prt2 + coord_flip() + theme_bw()
-  prt2 = prt2 + scale_colour_gradientn(name = "Specificity Score",space = "rgb",
+  prt2 = prt2 + scale_colour_gradientn(name = "Specificity Score",
                                        colours = c("black", "white", "red"),
                                        values = c(0,1.3, 2)/2,
                                        breaks = c(0,1.3, 2)/2,
@@ -47,7 +47,7 @@ makeVolcanoPlot = function(aSummary) {
   )
   )
 
-  vp = vp + geom_text() + scale_colour_gradientn(name = "Mean Specificity Score",space = "rgb",
+  vp = vp + geom_text() + scale_colour_gradientn(name = "Mean Specificity Score",
                                                  colours = c("black", "white", "red"),
                                                  values = c(0,1.3, 2)/2,
                                                  breaks = c(0,1.3, 2)/2,
