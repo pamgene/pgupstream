@@ -3,7 +3,7 @@
 #' Function for simple c-scoring on standard upstream DB
 #' @import dplyr
 #' @export
-cscore00 = function(db, rank_table = data.frame( rank = c(0,1,6,12), score = c(0.9, 0.7, 0.5, 0)) ){
+cscore0 = function(db, rank_table = data.frame( rank = c(0,1,6,12), score = c(0.9, 0.7, 0.5, 0)) ){
   db  = db %>%
     distinct(ID, Kinase_Name,PepProtein_PhosLink,  Database, .keep_all = TRUE) %>%
     mutate(cscore = rank_table$score[1])
